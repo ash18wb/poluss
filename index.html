@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="aitijhya poluss — a clean terminal-style AI chatbot." />
+  <title>aitijhya poluss — terminal AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #080b0d;
+      --panel: #0d1114;
+      --panel-2: #10161a;
+      --text: #d7e0e5;
+      --muted: #75828a;
+      --green: #79f2a4;
+      --green-dim: #2c8d56;
+      --border: #202a30;
+      --user: #111a15;
+      --danger: #ff8a8a;
+      --shadow: 0 30px 80px rgba(0,0,0,.45);
+    }
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 50% -10%, rgba(72, 255, 152, .07), transparent 35%),
+        linear-gradient(180deg, #080b0d, #07090b);
+      color: var(--text);
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .shell {
+      width: min(1060px, calc(100% - 28px));
+      margin: 32px auto;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin: 0 0 12px;
+      padding: 0 4px;
+    }
+    .brand-name { font-size: 14px; color: var(--green); font-weight: 700; letter-spacing: .03em; }
+    .brand-meta { color: var(--muted); font-size: 12px; }
+    .terminal {
+      border: 1px solid var(--border);
+      background: rgba(13,17,20,.96);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: var(--shadow), 0 0 0 1px rgba(255,255,255,.01) inset;
+    }
+    .chrome {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 48px;
+      padding: 0 16px;
+      background: #0a0e10;
+      border-bottom: 1px solid var(--border);
+    }
+    .traffic { display:flex; gap:7px; align-items:center; }
+    .traffic span { width:10px; height:10px; border-radius:50%; display:block; background:#334047; }
+    .traffic span:first-child { background:#ff6b6b; }
+    .traffic span:nth-child(2) { background:#f6c85f; }
+    .traffic span:last-child { background:#63d487; }
+    .window-title { color:#8d99a1; font-size:12px; }
+    .window-actions { display:flex; align-items:center; gap:12px; }
+    .status { color:var(--muted); font-size:12px; }
+    .status::before { content:""; display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--green); margin-right:7px; box-shadow:0 0 10px rgba(121,242,164,.5); }
+    .clear { border:0; background:transparent; color:#718089; font:inherit; font-size:12px; cursor:pointer; }
+    .clear:hover { color:var(--text); }
+    .body { display:flex; min-height:650px; flex-direction:column; }
+    .intro {
+      padding: 20px 22px 10px;
+      color: #96a3aa;
+      font-size: 12px;
+      line-height: 1.7;
+    }
+    .intro .prompt { color:var(--green); }
+    .messages {
+      flex: 1;
+      min-height: 430px;
+      max-height: 62vh;
+      overflow-y: auto;
+      padding: 8px 22px 22px;
+      scroll-behavior: smooth;
+    }
+    .message {
+      display:grid;
+      grid-template-columns:auto 1fr;
+      gap:12px;
+      padding: 12px 0;
+      border-bottom:1px dashed rgba(117,130,138,.10);
+    }
+    .message:last-child { border-bottom:0; }
+    .prefix { user-select:none; font-weight:700; }
+    .message.user .prefix { color:#8ba59a; }
+    .message.bot .prefix { color:var(--green); }
+    .content { white-space:pre-wrap; word-break:break-word; line-height:1.7; font-size:13px; }
+    .message.user .content { color:#c7d0d5; }
+    .message.bot .content { color:#d7e0e5; }
+    .typing { color:var(--muted); }
+    .typing::after { content:"▋"; margin-left:2px; animation: blink 1s steps(2,start) infinite; color:var(--green); }
+    @keyframes blink { 50% { opacity:0; } }
+    .suggestions {
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      padding: 0 22px 16px;
+    }
+    .suggestion {
+      border:1px solid var(--border);
+      background:#0b1013;
+      color:#8f9ba2;
+      border-radius:7px;
+      padding:7px 9px;
+      font:inherit;
+      font-size:11px;
+      cursor:pointer;
+    }
+    .suggestion:hover { border-color:#31543f; color:var(--green); background:#0d1410; }
+    .composer {
+      display:grid;
+      grid-template-columns:auto 1fr auto;
+      gap:10px;
+      align-items:end;
+      padding: 14px 18px 18px;
+      border-top:1px solid var(--border);
+      background:#0a0e10;
+    }
+    .prompt-mark { color:var(--green); font-size:14px; padding-bottom:13px; }
+    textarea {
+      width:100%;
+      min-height:48px;
+      max-height:150px;
+      resize:vertical;
+      border:1px solid var(--border);
+      border-radius:8px;
+      background:#0d1316;
+      color:var(--text);
+      font:inherit;
+      font-size:13px;
+      line-height:1.6;
+      padding:12px 13px;
+      outline:none;
+    }
+    textarea:focus { border-color:#31543f; box-shadow:0 0 0 3px rgba(121,242,164,.05); }
+    textarea::placeholder { color:#4f5c63; }
+    .send {
+      border:1px solid #2d5b3d;
+      background:#0d1b12;
+      color:var(--green);
+      border-radius:8px;
+      padding:12px 14px;
+      min-width:76px;
+      font:inherit;
+      font-size:12px;
+      font-weight:700;
+      cursor:pointer;
+    }
+    .send:hover { background:#112518; }
+    .send:disabled { opacity:.55; cursor:not-allowed; }
+    .footer { padding:0 22px 18px; color:#46535a; font-size:10px; line-height:1.6; }
+    .error { color:var(--danger) !important; }
+    @media (max-width: 700px) {
+      .shell { width:min(100% - 14px, 1060px); margin:14px auto; }
+      .brand-meta { display:none; }
+      .body { min-height: calc(100vh - 110px); }
+      .messages { max-height:none; min-height:50vh; }
+      .composer { grid-template-columns:auto 1fr; }
+      .send { grid-column: 2; width:100%; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <div class="brand">
+      <div class="brand-name">aitijhya poluss</div>
+      <div class="brand-meta">terminal interface · groq backend</div>
+    </div>
+
+    <section class="terminal" aria-label="aitijhya poluss terminal chat">
+      <div class="chrome">
+        <div class="traffic"><span></span><span></span><span></span></div>
+        <div class="window-title">aitijhya-poluss — chat</div>
+        <div class="window-actions">
+          <div class="status">online</div>
+          <button class="clear" id="clearBtn">clear</button>
+        </div>
+      </div>
+
+      <div class="body">
+        <div class="intro"><span class="prompt">$</span> session started. ask anything within the assistant's supported boundaries.</div>
+        <div class="messages" id="messages" aria-live="polite"></div>
+
+        <div class="suggestions">
+          <button class="suggestion" data-text="Explain this simply.">explain simply</button>
+          <button class="suggestion" data-text="Help me think through this problem.">think it through</button>
+          <button class="suggestion" data-text="Give me a few practical options.">give options</button>
+        </div>
+
+        <form class="composer" id="chatForm">
+          <div class="prompt-mark">$</div>
+          <textarea id="input" placeholder="type a message..." aria-label="Message"></textarea>
+          <button class="send" id="sendBtn" type="submit">send ↵</button>
+        </form>
+        <div class="footer">aitijhya poluss · responses are generated by the configured Groq model.</div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const messagesEl = document.getElementById('messages');
+    const form = document.getElementById('chatForm');
+    const input = document.getElementById('input');
+    const sendBtn = document.getElementById('sendBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const suggestions = document.querySelectorAll('.suggestion');
+
+    let history = JSON.parse(localStorage.getItem('aitijhya-poluss-history') || '[]');
+
+    function save() {
+      localStorage.setItem('aitijhya-poluss-history', JSON.stringify(history.slice(-30)));
+    }
+
+    function addMessage(role, text, extraClass='') {
+      const row = document.createElement('div');
+      row.className = `message ${role}`;
+      const prefix = document.createElement('div');
+      prefix.className = 'prefix';
+      prefix.textContent = role === 'user' ? '> ' : 'ai> ';
+      const content = document.createElement('div');
+      content.className = `content ${extraClass}`;
+      content.textContent = text;
+      row.appendChild(prefix);
+      row.appendChild(content);
+      messagesEl.appendChild(row);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      return row;
+    }
+
+    function render() {
+      messagesEl.innerHTML = '';
+      if (!history.length) {
+        addMessage('bot', 'Hello. I’m aitijhya poluss. What can I help you with?');
+        return;
+      }
+      history.forEach(m => addMessage(m.role === 'user' ? 'user' : 'bot', m.content));
+    }
+
+    function setBusy(busy) {
+      sendBtn.disabled = busy;
+      input.disabled = busy;
+      sendBtn.textContent = busy ? '...' : 'send ↵';
+    }
+
+    async function sendMessage(text) {
+      const message = text.trim();
+      if (!message || sendBtn.disabled) return;
+
+      history.push({ role:'user', content:message });
+      addMessage('user', message);
+      save();
+      input.value = '';
+      setBusy(true);
+
+      const typing = addMessage('bot', 'processing', 'typing');
+
+      try {
+        const response = await fetch('/api/chat', {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json' },
+          body:JSON.stringify({ message, history:history.slice(-10, -1) })
+        });
+        const data = await response.json().catch(() => ({}));
+        typing.remove();
+        if (!response.ok) throw new Error(data.error || `request failed (${response.status})`);
+        history.push({ role:'assistant', content:data.reply });
+        addMessage('bot', data.reply);
+        save();
+      } catch (err) {
+        typing.remove();
+        addMessage('bot', `request error: ${err.message || 'unknown error'}`, 'error');
+        console.error(err);
+      } finally {
+        setBusy(false);
+        input.focus();
+      }
+    }
+
+    form.addEventListener('submit', e => { e.preventDefault(); sendMessage(input.value); });
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
+    });
+    clearBtn.addEventListener('click', () => { history=[]; save(); render(); input.focus(); });
+    suggestions.forEach(btn => btn.addEventListener('click', () => sendMessage(btn.dataset.text)));
+
+    render();
+  </script>
+</body>
+</html>
